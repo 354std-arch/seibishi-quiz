@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>整備士試験クイズ 2024年10月</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f9ff;
+      --ink: #101828;
+      --muted: #475467;
+      --card: #ffffff;
+      --line: #d0d5dd;
+      --primary: #0f766e;
+      --primary-strong: #115e59;
+      --accent: #ef4444;
+      --ok: #166534;
+      --warn: #b45309;
+      --weak: #b42318;
+      --badge-unanswered: #f3f4f6;
+      --badge-solved: #dcfce7;
+      --badge-weak: #fee2e2;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 5% 5%, #c7f9cc 0%, transparent 30%),
+        radial-gradient(circle at 92% 0%, #bfdbfe 0%, transparent 30%),
+        linear-gradient(160deg, #f8fafc 0%, #eef2ff 45%, #f0fdfa 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #0f766e, #0369a1);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 2.4vw, 2rem);
+      letter-spacing: 0.02em;
+      font-weight: 900;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      opacity: 0.9;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .stat .value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-top: 5px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    button.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    button.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: var(--primary-strong);
+    }
+
+    button.choice {
+      width: 100%;
+      border-radius: 12px;
+      text-align: left;
+      white-space: normal;
+      line-height: 1.55;
+      padding: 12px;
+    }
+
+    button.choice.correct {
+      border-color: #16a34a;
+      background: #ecfdf3;
+      color: var(--ok);
+    }
+
+    button.choice.wrong {
+      border-color: #dc2626;
+      background: #fef2f2;
+      color: var(--weak);
+    }
+
+    button:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 6px 0 10px;
+      line-height: 1.4;
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+    }
+
+    .mode-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .choices {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .result {
+      display: none;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      margin-top: 14px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-title {
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .result-title.correct {
+      color: var(--ok);
+    }
+
+    .result-title.wrong {
+      color: var(--weak);
+    }
+
+    .xp-gain {
+      color: var(--warn);
+      font-weight: 700;
+      margin: 4px 0;
+    }
+
+    .explanation {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      margin-top: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 22px 10px;
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border: 1px solid transparent;
+    }
+
+    .badge.unanswered {
+      background: var(--badge-unanswered);
+      color: #374151;
+      border-color: #d1d5db;
+    }
+
+    .badge.solved {
+      background: var(--badge-solved);
+      color: #166534;
+      border-color: #86efac;
+    }
+
+    .badge.weak {
+      background: var(--badge-weak);
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .progress-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: #fff;
+      display: grid;
+      gap: 6px;
+    }
+
+    .progress-item strong {
+      font-size: 0.95rem;
+    }
+
+    .progress-item small {
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.82rem;
+      padding-bottom: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .progress-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 12px;
+      }
+
+      .hero {
+        padding: 14px;
+      }
+
+      .progress-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .toolbar {
+        gap: 12px;
+      }
+
+      .btns {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>整備士試験クイズアプリ 2024年10月</h1>
+      <p>40問 / XP・レベル・連続正解ボーナス / 苦手復習対応</p>
+    </section>
+
+    <section class="stats" aria-label="プレイヤーステータス">
+      <div class="stat">
+        <div class="label">XP</div>
+        <div class="value" id="xpValue">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">レベル</div>
+        <div class="value" id="levelValue">見習い</div>
+      </div>
+      <div class="stat">
+        <div class="label">次レベルまで</div>
+        <div class="value" id="nextLevelValue">60</div>
+      </div>
+      <div class="stat">
+        <div class="label">連続正解</div>
+        <div class="value" id="streakValue">0</div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <div class="btns" role="tablist" aria-label="出題モード">
+        <button id="modeNormalBtn" class="active">通常モード</button>
+        <button id="modeWeakBtn">苦手モード</button>
+      </div>
+      <div class="btns" role="tablist" aria-label="画面切り替え">
+        <button id="tabQuizBtn" class="active">クイズ</button>
+        <button id="tabProgressBtn">進捗一覧</button>
+      </div>
+    </section>
+
+    <section id="quizSection" class="card">
+      <p class="mode-note" id="modeDescription">通常モード: 未解答を優先してランダム出題</p>
+      <h2 id="questionTitle">読み込み中...</h2>
+      <p id="questionText"></p>
+      <div id="choices" class="choices"></div>
+      <div id="resultBox" class="result" aria-live="polite">
+        <div id="resultTitle" class="result-title"></div>
+        <div id="xpGain" class="xp-gain"></div>
+        <div id="resultAnswer"></div>
+        <div id="explanationText" class="explanation"></div>
+      </div>
+      <div style="margin-top: 12px;">
+        <button id="nextBtn" class="primary">次の問題へ</button>
+      </div>
+      <div id="weakEmpty" class="empty hidden">苦手問題はありません。通常モードで挑戦してください。</div>
+    </section>
+
+    <section id="progressSection" class="card hidden">
+      <div class="summary">
+        <span class="badge unanswered" id="summaryUnanswered">未解答: 0</span>
+        <span class="badge solved" id="summarySolved">正解済み: 0</span>
+        <span class="badge weak" id="summaryWeak">苦手: 0</span>
+      </div>
+      <div id="progressGrid" class="progress-grid"></div>
+    </section>
+
+    <p class="footer">データ: questions.json / 保存先: localStorage</p>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "seibishi_quiz_state_v1";
+
+    const LEVELS = [
+      { name: "見習い", minXp: 0 },
+      { name: "3級", minXp: 60 },
+      { name: "2級", minXp: 150 },
+      { name: "主任", minXp: 280 }
+    ];
+
+    let questions = [];
+    let state = {
+      xp: 0,
+      streak: 0,
+      mode: "normal",
+      progress: {}
+    };
+
+    let currentQuestion = null;
+    let answeredCurrent = false;
+
+    const xpValue = document.getElementById("xpValue");
+    const levelValue = document.getElementById("levelValue");
+    const nextLevelValue = document.getElementById("nextLevelValue");
+    const streakValue = document.getElementById("streakValue");
+
+    const modeNormalBtn = document.getElementById("modeNormalBtn");
+    const modeWeakBtn = document.getElementById("modeWeakBtn");
+
+    const tabQuizBtn = document.getElementById("tabQuizBtn");
+    const tabProgressBtn = document.getElementById("tabProgressBtn");
+    const quizSection = document.getElementById("quizSection");
+    const progressSection = document.getElementById("progressSection");
+
+    const modeDescription = document.getElementById("modeDescription");
+    const questionTitle = document.getElementById("questionTitle");
+    const questionText = document.getElementById("questionText");
+    const choices = document.getElementById("choices");
+
+    const resultBox = document.getElementById("resultBox");
+    const resultTitle = document.getElementById("resultTitle");
+    const xpGain = document.getElementById("xpGain");
+    const resultAnswer = document.getElementById("resultAnswer");
+    const explanationText = document.getElementById("explanationText");
+
+    const nextBtn = document.getElementById("nextBtn");
+    const weakEmpty = document.getElementById("weakEmpty");
+
+    const summaryUnanswered = document.getElementById("summaryUnanswered");
+    const summarySolved = document.getElementById("summarySolved");
+    const summaryWeak = document.getElementById("summaryWeak");
+    const progressGrid = document.getElementById("progressGrid");
+
+    function defaultProgress() {
+      return {
+        status: "unanswered",
+        attempts: 0,
+        correct: 0,
+        wrong: 0,
+        lastResult: null
+      };
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+      try {
+        const saved = JSON.parse(raw);
+        if (typeof saved !== "object" || saved === null) {
+          return;
+        }
+        state = {
+          xp: Number.isFinite(saved.xp) ? saved.xp : 0,
+          streak: Number.isFinite(saved.streak) ? saved.streak : 0,
+          mode: saved.mode === "weak" ? "weak" : "normal",
+          progress: typeof saved.progress === "object" && saved.progress ? saved.progress : {}
+        };
+      } catch (err) {
+        console.error("state load error", err);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function ensureProgressKeys() {
+      for (const q of questions) {
+        const key = String(q.id);
+        if (!state.progress[key]) {
+          state.progress[key] = defaultProgress();
+        }
+      }
+    }
+
+    function getLevelInfo(xp) {
+      let current = LEVELS[0];
+      for (const lvl of LEVELS) {
+        if (xp >= lvl.minXp) {
+          current = lvl;
+        }
+      }
+      const next = LEVELS.find((lvl) => lvl.minXp > xp);
+      return { current, next };
+    }
+
+    function updateStats() {
+      const { current, next } = getLevelInfo(state.xp);
+      xpValue.textContent = String(state.xp);
+      levelValue.textContent = current.name;
+      streakValue.textContent = String(state.streak);
+      nextLevelValue.textContent = next ? String(next.minXp - state.xp) : "MAX";
+    }
+
+    function labelForStatus(status) {
+      if (status === "solved") return "正解済";
+      if (status === "weak") return "苦手";
+      return "未解答";
+    }
+
+    function getQuestionStatus(qid) {
+      const p = state.progress[String(qid)] || defaultProgress();
+      return p.status;
+    }
+
+    function pickQuestion(mode) {
+      const weakPool = questions.filter((q) => getQuestionStatus(q.id) === "weak");
+
+      if (mode === "weak") {
+        if (!weakPool.length) {
+          return null;
+        }
+        return weakPool[Math.floor(Math.random() * weakPool.length)];
+      }
+
+      const unanswered = questions.filter((q) => getQuestionStatus(q.id) === "unanswered");
+      const pool = unanswered.length ? unanswered : questions;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function toggleModeButtons() {
+      modeNormalBtn.classList.toggle("active", state.mode === "normal");
+      modeWeakBtn.classList.toggle("active", state.mode === "weak");
+      modeDescription.textContent = state.mode === "normal"
+        ? "通常モード: 未解答を優先してランダム出題"
+        : "苦手モード: 間違えた問題だけを出題";
+    }
+
+    function showQuizTab() {
+      tabQuizBtn.classList.add("active");
+      tabProgressBtn.classList.remove("active");
+      quizSection.classList.remove("hidden");
+      progressSection.classList.add("hidden");
+    }
+
+    function showProgressTab() {
+      tabQuizBtn.classList.remove("active");
+      tabProgressBtn.classList.add("active");
+      quizSection.classList.add("hidden");
+      progressSection.classList.remove("hidden");
+      renderProgress();
+    }
+
+    function clearResultBox() {
+      resultBox.classList.remove("show");
+      resultTitle.textContent = "";
+      resultTitle.className = "result-title";
+      xpGain.textContent = "";
+      resultAnswer.textContent = "";
+      explanationText.textContent = "";
+    }
+
+    function renderQuestion() {
+      currentQuestion = pickQuestion(state.mode);
+      answeredCurrent = false;
+      clearResultBox();
+
+      if (!currentQuestion) {
+        weakEmpty.classList.remove("hidden");
+        questionTitle.textContent = "出題できる問題がありません";
+        questionText.textContent = "";
+        choices.innerHTML = "";
+        return;
+      }
+
+      weakEmpty.classList.add("hidden");
+      questionTitle.textContent = `問題 ${String(currentQuestion.id).padStart(2, "0")}`;
+      questionText.textContent = currentQuestion.question;
+      choices.innerHTML = "";
+
+      currentQuestion.choices.forEach((choiceText, idx) => {
+        const n = idx + 1;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.innerHTML = `<strong>(${n})</strong> ${choiceText}`;
+        btn.addEventListener("click", () => answerQuestion(n));
+        choices.appendChild(btn);
+      });
+    }
+
+    function gainXpForCorrect() {
+      let bonus = 0;
+      if (state.streak === 2) {
+        bonus = 5;
+      } else if (state.streak >= 3) {
+        bonus = 10;
+      }
+      return 20 + bonus;
+    }
+
+    function answerQuestion(selected) {
+      if (!currentQuestion || answeredCurrent) {
+        return;
+      }
+      answeredCurrent = true;
+
+      const correct = selected === currentQuestion.answer;
+      const qProgress = state.progress[String(currentQuestion.id)] || defaultProgress();
+      qProgress.attempts += 1;
+
+      if (correct) {
+        state.streak += 1;
+        const gained = gainXpForCorrect();
+        state.xp += gained;
+        qProgress.correct += 1;
+        qProgress.lastResult = "correct";
+        qProgress.status = "solved";
+
+        resultTitle.textContent = "正解！";
+        resultTitle.classList.add("correct");
+        xpGain.textContent = `獲得XP: +${gained} (基本20 + ボーナス${gained - 20})`;
+      } else {
+        state.streak = 0;
+        qProgress.wrong += 1;
+        qProgress.lastResult = "wrong";
+        qProgress.status = "weak";
+
+        resultTitle.textContent = "不正解";
+        resultTitle.classList.add("wrong");
+        xpGain.textContent = "獲得XP: +0";
+      }
+
+      state.progress[String(currentQuestion.id)] = qProgress;
+
+      const buttons = choices.querySelectorAll("button.choice");
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        const n = idx + 1;
+        if (n === currentQuestion.answer) {
+          btn.classList.add("correct");
+        }
+        if (n === selected && n !== currentQuestion.answer) {
+          btn.classList.add("wrong");
+        }
+      });
+
+      resultAnswer.textContent = `正解番号: (${currentQuestion.answer})`;
+      explanationText.textContent = currentQuestion.explanation;
+      resultBox.classList.add("show");
+
+      updateStats();
+      renderProgress();
+      saveState();
+    }
+
+    function renderProgress() {
+      let unanswered = 0;
+      let solved = 0;
+      let weak = 0;
+
+      progressGrid.innerHTML = "";
+      const sorted = [...questions].sort((a, b) => a.id - b.id);
+
+      for (const q of sorted) {
+        const p = state.progress[String(q.id)] || defaultProgress();
+        if (p.status === "unanswered") unanswered += 1;
+        if (p.status === "solved") solved += 1;
+        if (p.status === "weak") weak += 1;
+
+        const card = document.createElement("div");
+        card.className = "progress-item";
+        card.innerHTML = `
+          <strong>問題 ${String(q.id).padStart(2, "0")}</strong>
+          <span class="badge ${p.status}">${labelForStatus(p.status)}</span>
+          <small>回答 ${p.attempts} / 正解 ${p.correct}</small>
+        `;
+        progressGrid.appendChild(card);
+      }
+
+      summaryUnanswered.textContent = `未解答: ${unanswered}`;
+      summarySolved.textContent = `正解済み: ${solved}`;
+      summaryWeak.textContent = `苦手: ${weak}`;
+    }
+
+    async function loadQuestions() {
+      const res = await fetch("./questions.json", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`questions.json の取得に失敗: ${res.status}`);
+      }
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("questions.json が空、または形式不正です");
+      }
+      for (const item of data) {
+        if (!item || typeof item.id !== "number" || !Array.isArray(item.choices) || item.choices.length !== 4) {
+          throw new Error("questions.json の形式が要件を満たしません");
+        }
+      }
+      questions = data;
+    }
+
+    function bindEvents() {
+      modeNormalBtn.addEventListener("click", () => {
+        state.mode = "normal";
+        toggleModeButtons();
+        renderQuestion();
+        saveState();
+      });
+
+      modeWeakBtn.addEventListener("click", () => {
+        state.mode = "weak";
+        toggleModeButtons();
+        renderQuestion();
+        saveState();
+      });
+
+      tabQuizBtn.addEventListener("click", showQuizTab);
+      tabProgressBtn.addEventListener("click", showProgressTab);
+
+      nextBtn.addEventListener("click", () => {
+        renderQuestion();
+      });
+    }
+
+    async function init() {
+      try {
+        loadState();
+        await loadQuestions();
+        ensureProgressKeys();
+        bindEvents();
+        updateStats();
+        toggleModeButtons();
+        renderProgress();
+        renderQuestion();
+        saveState();
+      } catch (err) {
+        console.error(err);
+        questionTitle.textContent = "初期化エラー";
+        questionText.textContent = String(err.message || err);
+        choices.innerHTML = "";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
