@@ -354,7 +354,7 @@
   <main class="app">
     <section class="hero">
       <h1>整備士試験クイズアプリ 2024年10月</h1>
-      <p>40問 / XP・レベル・連続正解ボーナス / 苦手復習対応</p>
+      <p><span id="totalCount">-</span>問 / XP・レベル・連続正解ボーナス / 苦手復習対応</p>
     </section>
 
     <section class="stats" aria-label="プレイヤーステータス">
@@ -441,6 +441,7 @@
     const levelValue = document.getElementById("levelValue");
     const nextLevelValue = document.getElementById("nextLevelValue");
     const streakValue = document.getElementById("streakValue");
+    const totalCount = document.getElementById("totalCount");
 
     const modeNormalBtn = document.getElementById("modeNormalBtn");
     const modeWeakBtn = document.getElementById("modeWeakBtn");
@@ -605,6 +606,9 @@
 
       weakEmpty.classList.add("hidden");
       questionTitle.textContent = `問題 ${String(currentQuestion.id).padStart(2, "0")}`;
+      if (currentQuestion.exam_label && currentQuestion.question_no) {
+        questionTitle.textContent = `${currentQuestion.exam_label} 問題 ${String(currentQuestion.question_no).padStart(2, "0")}`;
+      }
       questionText.textContent = currentQuestion.question;
       choices.innerHTML = "";
 
@@ -700,8 +704,11 @@
 
         const card = document.createElement("div");
         card.className = "progress-item";
+        const label = q.exam_label && q.question_no
+          ? `${q.exam_label} 問題 ${String(q.question_no).padStart(2, "0")}`
+          : `問題 ${String(q.id).padStart(2, "0")}`;
         card.innerHTML = `
-          <strong>問題 ${String(q.id).padStart(2, "0")}</strong>
+          <strong>${label}</strong>
           <span class="badge ${p.status}">${labelForStatus(p.status)}</span>
           <small>回答 ${p.attempts} / 正解 ${p.correct}</small>
         `;
@@ -728,6 +735,7 @@
         }
       }
       questions = data;
+      totalCount.textContent = String(questions.length);
     }
 
     function bindEvents() {

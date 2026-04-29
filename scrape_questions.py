@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""2024年10月 2級ガソリン問題 (01-40) を取得して questions.json を作る。"""
+"""2級ガソリン問題を取得し、questions.jsonに追記する。"""
 
 from __future__ import annotations
 
@@ -15,12 +15,20 @@ from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 
 BASE_URL = "https://jidoshaseibishi.com"
-URL_TEMPLATE = BASE_URL + "/2G/2024_10/{n:02d}/{n:02d}.html"
+URL_TEMPLATE = BASE_URL + "/2G/{exam_code}/{n:02d}/{n:02d}.html"
 CACHE_DIR = Path("cache/pages")
 OUTPUT_PATH = Path("questions.json")
 REQUEST_TIMEOUT = 30
 SLEEP_MIN = 2.0
 SLEEP_MAX = 3.0
+
+# 既存データ(2024_10)に追記する対象
+# 注: サイトのURLは 2024_04 / 2023_04 ではなく 2024_03 / 2023_03
+TARGET_EXAMS = [
+    {"label": "2024年4月", "exam_code": "2024_03"},
+    {"label": "2023年10月", "exam_code": "2023_10"},
+    {"label": "2023年4月", "exam_code": "2023_03"},
+]
 
 
 session = requests.Session()
@@ -39,11 +47,11 @@ def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def fetch_with_cache(url: str, cache_file: Path) -> bytes:
+def fetch_with_cache(url: str, cache_file: Path) -> tuple[bytes, bool]:
     cache_file.parent.mkdir(parents=True, exist_ok=True)
 
     if cache_file.exists():
-        return cache_file.read_bytes()
+        return cache_file.read_bytes(), True
 
     res = session.get(url, timeout=REQUEST_TIMEOUT)
     res.raise_for_status()
@@ -55,7 +63,7 @@ def fetch_with_cache(url: str, cache_file: Path) -> bytes:
     wait_sec = random.uniform(SLEEP_MIN, SLEEP_MAX)
     time.sleep(wait_sec)
 
-    return html_bytes
+    return html_bytes, False
 
 
 def extract_question_text(box1: Tag) -> str:
@@ -76,10 +84,14 @@ def extract_choices(box1: Tag) -> list[str]:
 
     choices: list[str] = []
     for tr in form.select("tbody tr"):
+        item_input = tr.find("input", attrs={"name": "ITEM"})
+        if not item_input:
+            continue
         tds = tr.find_all("td")
         if len(tds) < 2:
             continue
-        text = normalize_text(tds[1].get_text(" ", strip=True))
+        # 2列問題/3列問題の両方に対応するため、先頭の番号セル以外を連結
+        text = normalize_text(" ".join(td.get_text(" ", strip=True) for td in tds[1:]))
         if text:
             choices.append(text)
 
@@ -145,14 +157,18 @@ def extract_explanation(soup: BeautifulSoup) -> str:
         if not text:
             continue
 
+        # 崩れたHTMLで「解説本文 + 関連リンク + 前の問題」が1つの要素に
+        # 混在する場合があるため、ナビ文言より前だけ採用して打ち切る。
         if "前の問題" in text or "次の問題" in text:
+            cut_pos = len(text)
+            for marker in ("前の問題", "次の問題"):
+                pos = text.find(marker)
+                if pos >= 0:
+                    cut_pos = min(cut_pos, pos)
+            head_text = normalize_text(text[:cut_pos])
+            if head_text:
+                lines.append(head_text)
             break
-
-        # 年度リンクなどの参照ブロックは解説から除外
-        if node.find_all("a", href=True):
-            hrefs = [a.get("href", "") for a in node.find_all("a", href=True)]
-            if any("/2G/" in h for h in hrefs):
-                continue
 
         lines.append(text)
 
@@ -163,7 +179,24 @@ def extract_explanation(soup: BeautifulSoup) -> str:
     return explanation
 
 
-def parse_question(html: bytes, question_id: int, url: str) -> dict[str, Any]:
+def extract_exam_label(soup: BeautifulSoup, exam_code: str) -> str:
+    title_node = soup.select_one("h3.title")
+    if title_node:
+        title_text = normalize_text(title_node.get_text(" ", strip=True))
+        m = re.search(r"(\d{4}年\d{2}月)", title_text)
+        if m:
+            return m.group(1)
+    return exam_code.replace("_", "年") + "月"
+
+
+def parse_question(
+    html: bytes,
+    question_id: int,
+    question_no: int,
+    exam_code: str,
+    request_label: str,
+    url: str,
+) -> dict[str, Any]:
     soup = BeautifulSoup(html, "html.parser")
 
     box1 = soup.select_one("div.box1")
@@ -174,9 +207,14 @@ def parse_question(html: bytes, question_id: int, url: str) -> dict[str, Any]:
     choices = extract_choices(box1)
     answer = extract_answer_index(box1)
     explanation = extract_explanation(soup)
+    exam_label = extract_exam_label(soup, exam_code)
 
     return {
         "id": question_id,
+        "exam_code": exam_code,
+        "exam_label": exam_label,
+        "requested_exam_label": request_label,
+        "question_no": question_no,
         "question": question_text,
         "choices": choices,
         "answer": answer,
@@ -186,23 +224,65 @@ def parse_question(html: bytes, question_id: int, url: str) -> dict[str, Any]:
 
 
 def main() -> None:
-    all_items: list[dict[str, Any]] = []
+    if OUTPUT_PATH.exists():
+        all_items: list[dict[str, Any]] = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+    else:
+        all_items = []
 
-    for qid in range(1, 41):
-        url = URL_TEMPLATE.format(n=qid)
-        cache_file = CACHE_DIR / f"2024_10_{qid:02d}.html"
+    existing_urls = {item.get("source_url") for item in all_items if item.get("source_url")}
+    max_id = max((int(item.get("id", 0)) for item in all_items), default=0)
+    next_id = max_id + 1
 
-        html = fetch_with_cache(url, cache_file)
-        item = parse_question(html, qid, url)
-        all_items.append(item)
-        print(f"[OK] {qid:02d} {url}")
+    print(f"[START] existing questions: {len(all_items)} (max id={max_id})")
 
-    OUTPUT_PATH.write_text(
-        json.dumps(all_items, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    for exam in TARGET_EXAMS:
+        label = exam["label"]
+        exam_code = exam["exam_code"]
+        year_added = 0
+        year_cached = 0
+        year_fetched = 0
+        year_skipped = 0
 
-    print(f"\nSaved {len(all_items)} questions to {OUTPUT_PATH}")
+        print(f"\n[YEAR START] {label} ({exam_code})")
+
+        for qno in range(1, 41):
+            url = URL_TEMPLATE.format(exam_code=exam_code, n=qno)
+            if url in existing_urls:
+                year_skipped += 1
+                continue
+
+            cache_file = CACHE_DIR / f"{exam_code}_{qno:02d}.html"
+            html, is_cached = fetch_with_cache(url, cache_file)
+            if is_cached:
+                year_cached += 1
+            else:
+                year_fetched += 1
+
+            item = parse_question(
+                html=html,
+                question_id=next_id,
+                question_no=qno,
+                exam_code=exam_code,
+                request_label=label,
+                url=url,
+            )
+            all_items.append(item)
+            existing_urls.add(url)
+            year_added += 1
+            print(
+                f"[OK] {label} Q{qno:02d} -> id={next_id} "
+                f"({'cache' if is_cached else 'fetched'})"
+            )
+            next_id += 1
+
+        print(
+            "[YEAR DONE] "
+            f"{label}: added={year_added}, skipped(existing)={year_skipped}, "
+            f"cache-hit={year_cached}, fetched={year_fetched}"
+        )
+
+    OUTPUT_PATH.write_text(json.dumps(all_items, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\n[DONE] total questions: {len(all_items)} -> {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":
