@@ -14,7 +14,7 @@ export default function Choice({ label, index, onClick, disabled, state }) {
       disabled={disabled}
       className={classNames.join(' ')}
     >
-      <span className="text-sm md:text-base leading-relaxed">{label}</span>
+      <span className="text-[15px] md:text-[17px] leading-7 md:leading-8 break-words whitespace-pre-wrap">{label}</span>
     </button>
   );
 }

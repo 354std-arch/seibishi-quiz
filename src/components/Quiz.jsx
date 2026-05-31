@@ -20,6 +20,43 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function normalizeSpaces(text) {
+  return String(text ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function cleanupQuestionText(raw) {
+  let text = normalizeSpaces(raw);
+
+  // スクレイプ時に混入しうるナビ系文言を末尾ごと除去
+  text = text.replace(/(?:前の問題|次の問題|集計結果をみる|Advertisement).*$/u, '').trim();
+
+  // 可読性向上のための自動改行
+  text = text
+    .replace(/(下の組み合わせのうち、)\s*/gu, '$1\n')
+    .replace(/(は次のうちどれか。)\s*/gu, '$1\n')
+    .replace(/(はどれか。)\s*/gu, '$1\n')
+    .replace(/(ただし、)/gu, '\n$1')
+    .replace(/。\s+(?=[「『（(A-Za-z0-9一-龯ぁ-んァ-ヶ])/gu, '。\n');
+
+  // 過剰改行の抑制
+  text = text.replace(/\n{3,}/g, '\n\n').trim();
+  return text;
+}
+
+function cleanupChoiceText(raw) {
+  return normalizeSpaces(raw)
+    .replace(/[ \t]+/g, ' ')
+    .replace(/　+/g, ' ');
+}
+
+function sanitizeQuestions(data) {
+  return data.map((item) => ({
+    ...item,
+    question: cleanupQuestionText(item.question),
+    choices: Array.isArray(item.choices) ? item.choices.map(cleanupChoiceText) : [],
+  }));
+}
+
 export default function Quiz() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +75,7 @@ export default function Quiz() {
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('questions.jsonが空です');
         }
-        setQuestions(data);
+        setQuestions(sanitizeQuestions(data));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -119,7 +156,7 @@ export default function Quiz() {
             : { x: 0 }
         }
         transition={{ duration: 0.35 }}
-        className="max-w-3xl mx-auto space-y-3 md:space-y-4"
+        className="max-w-4xl mx-auto space-y-3 md:space-y-4"
       >
         <header className="flex items-center justify-between rounded-2xl bg-panel/80 border border-slate-700/70 px-4 py-3">
           <p className="font-black text-combo tracking-wide">🔥 {state.combo} COMBO</p>
@@ -158,7 +195,7 @@ export default function Quiz() {
           <span className="inline-block rounded-full border border-slate-600 bg-slate-900/80 px-3 py-1 text-xs text-slate-300 mb-3">
             {formatSourceTag(state.currentQuestion)}
           </span>
-          <h1 className="text-base md:text-xl font-semibold leading-relaxed text-slate-100 whitespace-pre-wrap">
+          <h1 className="text-[17px] md:text-[22px] font-medium leading-8 md:leading-10 text-slate-100 whitespace-pre-wrap break-words">
             {state.currentQuestion.question}
           </h1>
 
