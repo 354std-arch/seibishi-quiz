@@ -141,6 +141,7 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen px-3 py-4 md:py-8 md:px-6 text-textmain">
+      <div className="grid-overlay" />
       <BonusFlash
         jackpotText={state.jackpotText}
         comboText={state.comboText}
@@ -156,43 +157,43 @@ export default function Quiz() {
             : { x: 0 }
         }
         transition={{ duration: 0.35 }}
-        className="max-w-4xl mx-auto space-y-3 md:space-y-4"
+        className="relative z-10 max-w-4xl mx-auto space-y-3 md:space-y-4"
       >
-        <header className="flex items-center justify-between rounded-2xl bg-panel/80 border border-slate-700/70 px-4 py-3">
-          <p className="font-black text-combo tracking-wide">🔥 {state.combo} COMBO</p>
-          <p className="text-slate-200 font-semibold">{questionCounter}/10</p>
+        <header className="panel flex items-center justify-between rounded-2xl px-4 py-3">
+          <p className="font-display font-black text-combo tracking-wide">🔥 {state.combo} COMBO</p>
+          <p className="font-display text-slate-200 font-semibold">{questionCounter}/10</p>
         </header>
 
         <section className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl bg-panel/80 border border-slate-700/70 p-3">
-            <p className="text-[11px] text-slate-400">XP</p>
-            <p className="text-xp font-black text-lg">{state.xp}</p>
+          <div className="stat-tile rounded-xl p-3">
+            <p className="text-[11px] text-cyan-200/70">XP</p>
+            <p className="font-display text-xp font-black text-lg">{state.xp}</p>
           </div>
-          <div className="rounded-xl bg-panel/80 border border-slate-700/70 p-3">
-            <p className="text-[11px] text-slate-400">レベル</p>
-            <p className="text-level font-black text-lg truncate">{levelInfo.levelName}</p>
+          <div className="stat-tile rounded-xl p-3">
+            <p className="text-[11px] text-violet-200/70">レベル</p>
+            <p className="font-display text-level font-black text-lg truncate">{levelInfo.levelName}</p>
           </div>
-          <div className="rounded-xl bg-panel/80 border border-slate-700/70 p-3">
-            <p className="text-[11px] text-slate-400">正答率</p>
-            <p className="text-slate-100 font-black text-lg">{accuracy}%</p>
+          <div className="stat-tile rounded-xl p-3">
+            <p className="text-[11px] text-amber-200/70">正答率</p>
+            <p className="font-display text-slate-100 font-black text-lg">{accuracy}%</p>
           </div>
         </section>
 
         <XPBar xp={state.xp} />
         <OilGauge oil={state.oil} justDropped={state.justDroppedOil} />
 
-        <section className="relative rounded-2xl bg-panel/90 border border-slate-700/80 p-4 md:p-5 overflow-hidden">
+        <section className="panel relative rounded-2xl p-4 md:p-5 overflow-hidden">
           {showXpFloat && (
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.88 }}
               animate={{ opacity: [0, 1, 1, 0], y: [10, -8, -30, -44], scale: [0.88, 1, 1, 0.95] }}
               transition={{ duration: 0.9, times: [0, 0.2, 0.65, 1] }}
-              className="absolute right-5 top-4 text-xp font-black text-2xl drop-shadow"
+              className="absolute right-5 top-4 font-display text-xp font-black text-2xl drop-shadow"
             >
               {state.feedback.message}
             </motion.div>
           )}
-          <span className="inline-block rounded-full border border-slate-600 bg-slate-900/80 px-3 py-1 text-xs text-slate-300 mb-3">
+          <span className="inline-block rounded-full border border-cyan-700/60 bg-cyan-950/30 px-3 py-1 text-xs text-cyan-100/85 mb-3 font-display">
             {formatSourceTag(state.currentQuestion)}
           </span>
           <h1 className="text-[17px] md:text-[22px] font-medium leading-8 md:leading-10 text-slate-100 whitespace-pre-wrap break-words">
@@ -224,7 +225,7 @@ export default function Quiz() {
               animate={{ opacity: 1, y: 0 }}
               type="button"
               onClick={pickNextQuestion}
-              className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 font-black tracking-wide text-slate-900 hover:brightness-110 transition"
+              className="primary-cta mt-4 w-full rounded-xl px-4 py-3 font-display font-black tracking-wide hover:brightness-110 transition"
             >
               次へ
             </motion.button>

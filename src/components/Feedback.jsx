@@ -2,7 +2,7 @@ export default function Feedback({ result, explanation, answerIndex }) {
   if (!result) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
+    <div className="panel mt-4 rounded-2xl p-4">
       <p className={result.correct ? 'text-green-300 font-semibold' : 'text-red-300 font-semibold'}>
         {result.correct ? '正解！' : '不正解'} {result.message}
       </p>

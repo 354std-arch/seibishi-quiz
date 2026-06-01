@@ -10,10 +10,10 @@ function oilColor(oil) {
 export default function OilGauge({ oil, justDropped }) {
   const color = oilColor(oil);
   return (
-    <div className="rounded-2xl bg-panel/80 p-4 border border-slate-700/70">
+    <div className="panel rounded-2xl p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-slate-300 tracking-wide">OIL GAUGE</p>
-        <p className="text-sm font-semibold" style={{ color }}>{oil}/3</p>
+        <p className="text-sm text-slate-300 tracking-wide font-display">OIL GAUGE</p>
+        <p className="text-sm font-semibold font-display" style={{ color }}>{oil}/3</p>
       </div>
       <div className="h-3 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
         <motion.div

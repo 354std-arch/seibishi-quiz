@@ -4,15 +4,74 @@
 
 :root {
   color-scheme: dark;
+  --bg-a: #070b12;
+  --bg-b: #0a1523;
+  --ink: #e8eaed;
+  --line: rgba(148, 163, 184, 0.24);
+  --neon-cyan: #22d3ee;
+  --neon-lime: #84cc16;
+  --neon-orange: #ffb547;
+  --panel-glass: linear-gradient(160deg, rgba(19, 24, 32, 0.88), rgba(11, 18, 29, 0.84));
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 15% 0%, #182235 0%, #0a0e13 45%), #0a0e13;
-  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  background:
+    radial-gradient(1200px 550px at -5% -10%, rgba(34, 211, 238, 0.2), transparent 58%),
+    radial-gradient(900px 480px at 103% -12%, rgba(132, 204, 22, 0.16), transparent 55%),
+    radial-gradient(700px 360px at 50% 120%, rgba(255, 181, 71, 0.12), transparent 70%),
+    linear-gradient(155deg, var(--bg-b) 0%, var(--bg-a) 58%);
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
 }
 
 * {
   box-sizing: border-box;
+}
+
+.font-display {
+  font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at 50% 40%, black 10%, transparent 88%);
+}
+
+.panel {
+  background: var(--panel-glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(226, 232, 240, 0.04), 0 14px 36px rgba(2, 6, 23, 0.42);
+}
+
+.stat-tile {
+  background: linear-gradient(165deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.74));
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: inset 0 1px 0 rgba(226, 232, 240, 0.06);
+}
+
+.choice-tile {
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.78), rgba(17, 24, 39, 0.82));
+  border: 1px solid rgba(71, 85, 105, 0.7);
+}
+
+.choice-tile:hover {
+  border-color: rgba(34, 211, 238, 0.82);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.32), 0 10px 24px rgba(6, 182, 212, 0.2);
+}
+
+.primary-cta {
+  background: linear-gradient(94deg, #22c55e 0%, #06b6d4 48%, #60a5fa 100%);
+  color: #06111d;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.32);
 }
